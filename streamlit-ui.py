@@ -1,12 +1,16 @@
 import streamlit as st
 import os
 import tempfile
+from dotenv import load_dotenv
 from llama_parse import LlamaParse
 from llama_index.core import SimpleDirectoryReader
 from anthropic import Anthropic
 from sklearn.feature_extraction.text import TfidfVectorizer
 from voyageai import Client as VoyageClient
 import pinecone
+
+# Load environment variables
+load_dotenv()
 
 # Set page config
 st.set_page_config(page_title="Contextual RAG Pipeline", layout="wide")
@@ -16,7 +20,7 @@ st.title("Contextual RAG Pipeline")
 
 # Sidebar for API keys
 st.sidebar.header("API Keys")
-llama_cloud_api_key = st.sidebar.text_input("LlamaIndex API Key", type="password")
+llama_cloud_api_key = st.sidebar.text_input("LlamaCloud API Key", type="password")
 anthropic_api_key = st.sidebar.text_input("Anthropic API Key", type="password")
 pinecone_api_key = st.sidebar.text_input("Pinecone API Key", type="password")
 voyage_api_key = st.sidebar.text_input("Voyage AI API Key", type="password")
@@ -34,13 +38,18 @@ vector_index_name = st.text_input("Vector Index Name", "contextual-rag-index")
 
 # Pipeline functions
 def parse_pdf(file):
-    parser = LlamaParse(result_type="text", api_key=llama_cloud_api_key)
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
-        temp_file.write(file.getvalue())
-        temp_file_path = temp_file.name
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+        tmp_file.write(file.getvalue())
+        tmp_file_path = tmp_file.name
 
-    documents = SimpleDirectoryReader(input_files=[temp_file_path], file_extractor={".pdf": parser}).load_data()
-    os.unlink(temp_file_path)
+    parser = LlamaParse(
+        result_type="text",
+        api_key=llama_cloud_api_key
+    )
+    file_extractor = {".pdf": parser}
+    documents = SimpleDirectoryReader(input_files=[tmp_file_path], file_extractor=file_extractor).load_data()
+    
+    os.unlink(tmp_file_path)
     return documents[0].text
 
 def chunk_text(text, chunk_size, chunk_overlap):
