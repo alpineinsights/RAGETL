@@ -1,7 +1,5 @@
 import streamlit as st
-import os
-import tempfile
-import PyPDF2
+import io
 from anthropic import Anthropic
 from sklearn.feature_extraction.text import TfidfVectorizer
 from voyageai import Client as VoyageClient
@@ -20,8 +18,8 @@ pinecone_api_key = st.sidebar.text_input("Pinecone API Key", type="password", va
 voyage_api_key = st.sidebar.text_input("Voyage AI API Key", type="password", value=st.secrets.get("VOYAGE_API_KEY", ""))
 
 # Main content
-st.header("Upload PDF Document")
-uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
+st.header("Upload Document")
+uploaded_file = st.file_uploader("Choose a text file", type=["txt", "pdf"])
 
 # Pipeline parameters
 st.header("Pipeline Parameters")
@@ -31,12 +29,13 @@ embedding_model = st.selectbox("Embedding Model", ["voyage-finance-2", "voyage-2
 vector_index_name = st.text_input("Vector Index Name", "contextual-rag-index")
 
 # Pipeline functions
-def parse_pdf(file):
-    pdf_reader = PyPDF2.PdfReader(file)
-    text = ""
-    for page in pdf_reader.pages:
-        text += page.extract_text()
-    return text
+def read_file(file):
+    if file.type == "text/plain":
+        return file.getvalue().decode("utf-8")
+    elif file.type == "application/pdf":
+        return "PDF content (not parsed)"  # Placeholder for PDF content
+    else:
+        return "Unsupported file type"
 
 def chunk_text(text, chunk_size, chunk_overlap):
     chunks = []
@@ -94,8 +93,8 @@ def store_in_pinecone(chunks, contexts, sparse_vectors, dense_vectors, index_nam
         index.upsert(vectors=to_upsert)
 
 def process_document(file, chunk_size, chunk_overlap, embedding_model, vector_index_name):
-    # Parse PDF
-    text = parse_pdf(file)
+    # Read file
+    text = read_file(file)
     
     # Chunk text
     chunks = chunk_text(text, chunk_size, chunk_overlap)
@@ -129,4 +128,4 @@ if st.button("Process Document"):
             except Exception as e:
                 st.error(f"An error occurred while processing the document: {str(e)}")
     else:
-        st.error("Please upload a PDF document first.")
+        st.error("Please upload a document first.")
