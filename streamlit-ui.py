@@ -1,16 +1,12 @@
 import streamlit as st
 import os
 import tempfile
-from dotenv import load_dotenv
 from llama_parse import LlamaParse
 from llama_index.core import SimpleDirectoryReader
 from anthropic import Anthropic
 from sklearn.feature_extraction.text import TfidfVectorizer
 from voyageai import Client as VoyageClient
 import pinecone
-
-# Load environment variables
-load_dotenv()
 
 # Set page config
 st.set_page_config(page_title="Contextual RAG Pipeline", layout="wide")
@@ -20,10 +16,10 @@ st.title("Contextual RAG Pipeline")
 
 # Sidebar for API keys
 st.sidebar.header("API Keys")
-llama_cloud_api_key = st.sidebar.text_input("LlamaCloud API Key", type="password")
-anthropic_api_key = st.sidebar.text_input("Anthropic API Key", type="password")
-pinecone_api_key = st.sidebar.text_input("Pinecone API Key", type="password")
-voyage_api_key = st.sidebar.text_input("Voyage AI API Key", type="password")
+llama_cloud_api_key = st.sidebar.text_input("LlamaCloud API Key", type="password", value=st.secrets.get("LLAMA_CLOUD_API_KEY", ""))
+anthropic_api_key = st.sidebar.text_input("Anthropic API Key", type="password", value=st.secrets.get("ANTHROPIC_API_KEY", ""))
+pinecone_api_key = st.sidebar.text_input("Pinecone API Key", type="password", value=st.secrets.get("PINECONE_API_KEY", ""))
+voyage_api_key = st.sidebar.text_input("Voyage AI API Key", type="password", value=st.secrets.get("VOYAGE_API_KEY", ""))
 
 # Main content
 st.header("Upload PDF Document")
