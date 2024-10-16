@@ -1,8 +1,8 @@
+
 streamlit
 llama-index-core
 llama-parse
 llama-index-readers-file
-python-dotenv
 pinecone-client
 voyageai
 anthropic
