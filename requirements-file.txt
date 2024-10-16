@@ -1,5 +1,7 @@
 streamlit
-pinecone-client
+python-dotenv
+llama-parse
 voyageai
 anthropic
 scikit-learn
+pinecone-client
