@@ -1,8 +1,7 @@
 import streamlit as st
 import os
 import tempfile
-from llama_parse import LlamaParse
-from llama_index.core import SimpleDirectoryReader
+import PyPDF2
 from anthropic import Anthropic
 from sklearn.feature_extraction.text import TfidfVectorizer
 from voyageai import Client as VoyageClient
@@ -16,7 +15,6 @@ st.title("Contextual RAG Pipeline")
 
 # Sidebar for API keys
 st.sidebar.header("API Keys")
-llama_cloud_api_key = st.sidebar.text_input("LlamaCloud API Key", type="password", value=st.secrets.get("LLAMA_CLOUD_API_KEY", ""))
 anthropic_api_key = st.sidebar.text_input("Anthropic API Key", type="password", value=st.secrets.get("ANTHROPIC_API_KEY", ""))
 pinecone_api_key = st.sidebar.text_input("Pinecone API Key", type="password", value=st.secrets.get("PINECONE_API_KEY", ""))
 voyage_api_key = st.sidebar.text_input("Voyage AI API Key", type="password", value=st.secrets.get("VOYAGE_API_KEY", ""))
@@ -34,19 +32,11 @@ vector_index_name = st.text_input("Vector Index Name", "contextual-rag-index")
 
 # Pipeline functions
 def parse_pdf(file):
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
-        tmp_file.write(file.getvalue())
-        tmp_file_path = tmp_file.name
-
-    parser = LlamaParse(
-        result_type="text",
-        api_key=llama_cloud_api_key
-    )
-    file_extractor = {".pdf": parser}
-    documents = SimpleDirectoryReader(input_files=[tmp_file_path], file_extractor=file_extractor).load_data()
-    
-    os.unlink(tmp_file_path)
-    return documents[0].text
+    pdf_reader = PyPDF2.PdfReader(file)
+    text = ""
+    for page in pdf_reader.pages:
+        text += page.extract_text()
+    return text
 
 def chunk_text(text, chunk_size, chunk_overlap):
     chunks = []
@@ -129,7 +119,7 @@ def process_document(file, chunk_size, chunk_overlap, embedding_model, vector_in
 # Process button
 if st.button("Process Document"):
     if uploaded_file is not None:
-        if not all([llama_cloud_api_key, anthropic_api_key, pinecone_api_key, voyage_api_key]):
+        if not all([anthropic_api_key, pinecone_api_key, voyage_api_key]):
             st.error("Please provide all required API keys.")
         else:
             st.info("Processing document... This may take a while.")
