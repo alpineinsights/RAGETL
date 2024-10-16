@@ -1,5 +1,4 @@
 streamlit
-PyPDF2
 pinecone-client
 voyageai
 anthropic
